@@ -1,0 +1,127 @@
+---
+title: "heatmap"
+output: html_document
+---
+
+```{r}
+#functions 
+hill <- function (c, phi, A){
+  m = 3
+  hill = c*(A)^m / (phi^m + A^m)
+  
+  return (hill)
+}
+
+R0_f <- function (c, phi, tot, f){
+  
+  p = 8
+  beta = 5*10^(-5)
+  T0 = 10^6
+  alpha = 1
+  
+  constant <- p*beta*T0/alpha
+  d = 5
+  
+  R0_f = constant*1/(d + hill(c, phi, f*tot) + hill(5, 5, (1-f)*tot))
+  
+  return(R0_f)
+}
+```
+
+setting up for graphs
+```{r}
+fracA <- c(rep(seq(0.01, 1, by = 0.01), 100))
+Atot <- c()
+for(i in 1:100){
+  Atot = append(Atot, rep(i, 100))
+}
+
+xmin <- c()
+for(i in 0:99){
+  xmin = append(xmin, rep(i, 100))
+}
+
+xmax <- c()
+for(i in 1:100){
+  xmax = append(xmax, rep(i, 100))
+}
+
+ymin <- c(rep(seq(0,0.99, by = 0.01), 100))
+ymax <- c(rep(seq(0.01, 1, by = 0.01), 100))
+
+c_s = c(10, 5, 2.5)
+phi_s = c(10,5, 2.5)
+
+
+A <- c(seq(0:100))
+f <- c(seq(0,1, by = 0.01))
+
+```
+
+creating plots
+```{r}
+empty_list <- vector(mode='list', length=10)
+n = 0
+
+for(c in c_s){
+  for(phi in phi_s){
+    n = n+1
+    temp = matrix(nrow = 101, ncol = 101)
+    
+    for(i in 1:101){
+      for(j in 1:101){
+    temp[[i,j]] <- R0_f(c,phi,A[i], f[j])
+     }
+    }
+  
+min1 <- c()
+min2 <- c()
+
+for (i in 1:100){
+  k<- c((which(temp[i,] == min(temp[i,]))))
+  if (length(k) == 2){
+  min1 = append(min1, rep((k[1])/100, 100))
+  min2 = append(min2, rep((k[2]-1)/100, 100))
+  }
+  else{
+  min1 = append(min1, rep((k[1])/100, 100))
+  min2 = append(min2, rep((k[1])/100, 100))
+  }
+}
+
+R0 <- c()
+for(i in 1:100){
+  for(j in 1:100){
+      R0 <- append(R0, temp[[i, j]])
+  }
+}
+
+r <- as.data.frame(cbind(Atot, fracA, R0, min1, min2, xmin, xmax, ymin, ymax))
+
+g <- ggplot(r, aes(Atot, fracA, fill= R0)) + 
+  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax)) +
+  scale_x_log10() +
+  geom_line(aes(Atot, min1), col = "navy", size = 0.5)+
+  geom_line(aes(Atot, min2), col = "navy", size = 0.5)+
+  scale_fill_distiller(palette = "PuOr") +
+  labs(title = paste("c = ", c, ", phi = ", phi),
+       x = "Total Antibody", y = "Fraction of A")+
+ theme(legend.title = element_text(size=5),
+        legend.text = element_text(size=5),
+       axis.title.x = element_text(size = 5),
+       axis.title.y = element_text(size = 5),
+       axis.text.x = element_text(size = 2),
+       axis.text.y = element_text(size = 2),
+       plot.title = element_text(size=7))+
+  guides(fill = guide_colourbar(barwidth = 0.5, barheight = 3))
+
+ empty_list[[n]] = g   
+  }
+}
+
+empty_list = empty_list[-which(sapply(empty_list, is.null))]
+
+library("gridExtra")
+do.call(grid.arrange,empty_list)
+
+```

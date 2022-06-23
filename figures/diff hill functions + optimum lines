@@ -1,0 +1,102 @@
+```{r}
+hill <- function (c, phi, A){
+  m = 3
+  hill = c*(A)^m / (phi^m + A^m)
+  
+  return (hill)
+}
+
+
+R0_f <- function (c, phi, tot, f){
+  
+  p = 8
+  beta = 5*10^(-5)
+  T0 = 10^6
+  alpha = 1
+  
+  constant <- p*beta*T0/alpha
+  d = 5
+  
+  R0_f = constant*1/(d + hill(c, phi, f*tot) + hill(5, 5, (1-f)*tot))
+  
+  return(R0_f)
+}
+
+
+temp1 <- matrix(nrow = 100, ncol = 100)
+temp2 <- matrix(nrow = 100, ncol = 100)
+temp3 <- matrix(nrow = 100, ncol = 100)
+temp4 <- matrix(nrow = 100, ncol = 100)
+
+A <- c(seq(0:99))
+f <- c(seq(0.01,1, by = 0.01))
+
+# c = 10, phi = 10
+for(i in 1:100){
+  for(j in 1:100){
+    temp2[[i,j]] <- R0_f(10,10,A[i], f[j])
+  }
+}
+
+# c = 15, phi = 15
+for(i in 1:100){
+  for(j in 1:100){
+    temp3[[i,j]] <- R0_f(15,15,A[i], f[j])
+  }
+}
+
+# c = 20, phi = 20
+for(i in 1:100){
+  for(j in 1:100){
+    temp4[[i,j]] <- R0_f(20,20,A[i], f[j])
+  }
+}
+```
+
+setting up for graphs
+```{r}
+fracA <- c(rep(seq(0.01, 1, by = 0.01), 100))
+Atot <- c()
+for(i in 1:100){
+  Atot = append(Atot, rep(i, 100))
+}
+```
+
+
+```{r}
+min2 <- c()
+for (i in 1:100){
+  min2 = append(min2, rep(which.min(temp2[i,])/100, 100))
+}
+
+min3 <- c()
+for (i in 1:100){
+  min3 = append(min3, rep(which.min(temp3[i,])/100, 100))
+}
+
+min4 <- c()
+for (i in 1:100){
+  min4 = append(min4, rep(which.min(temp4[i,])/100, 100))
+}
+
+
+r <- as.data.frame(cbind(Atot, fracA, R01, min1, min2, min3, min4))
+
+ggplot(r, aes(Atot, fracA))+
+  scale_x_log10()+
+  geom_line(aes(Atot, min2), col = "red")+
+  geom_line(aes(Atot, min3), col = "blue")+
+  geom_line(aes(Atot, min4), col = "black")+
+  theme_classic()+
+  xlab("Total Aantibody")+
+  ylab("Fraction of A1")
+```
+
+
+```{r}
+curve((20*x^3)/(20^3+x^3), from = 0, to = 40, col = "black",xlab = "Antibody 1",
+ylab = "efficacy", add = T)
+curve((10*x^3)/(10^3+x^3), from = 0, to = 40, col = "red", add = T)
+curve((15*x^3)/(15^3+x^3), from = 0, to = 40, col = "blue", add = T)
+legend(28,6, legend=c("c=10, phi=10", "c=15,phi=15", "c=20, phi=20"), col=c("red", "blue", "black"), lty = 1,  cex=0.8)
+```

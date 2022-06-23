@@ -1,0 +1,85 @@
+---
+title: "basic"
+output: html_document
+---
+
+```{r}
+require(deSolve)
+library(tidyverse)
+
+#implementing model equations
+basic<- function (t, y, parms) {
+  with(as.list(c(parms)),{
+    y=pmax(y,0)
+    
+    # vectors for each population
+    V=y[1:(n)] 
+    
+    # make empty vectors of length n for the derivatives
+    dV=rep(0,n)
+
+    
+    # calculate the derivatives
+    dV[1] =  - (n-1)*k*V[1]
+    
+    for(i in 2:(n-1)){
+      dV[i] = +(n-1)*k*V[i-1] - (n-1)*k*V[i]
+    }
+    
+    dV[n] =  (n-1)*k*V[n-1]
+    
+# output the derivatives
+  dy=c(dV)
+   return(list(dy))
+  })
+}
+
+#defining parameters
+n=100
+k=1
+
+parms = c(n=n, k=k)
+
+#time specification 
+time <- seq(0, 100, 10)
+
+
+#initial conditions
+statenames <-c(paste('V',1:100, sep=''))
+y <- rep(0, n)
+names(y)<-statenames
+y[grep('^V1$', statenames)]<-100
+
+
+#solving the ode
+soln <- as.data.frame(ode(y = y, time = time, basic, parms = parms))
+
+```
+
+
+```{r}
+# plotting and testing
+legend.names = c()
+a = c(1,3,5,9,13,17,21)
+for (i in a){
+  legend.names = append(legend.names, paste0("time = ", i))
+}
+
+plot(1:100, soln[1, 2:101], type = "b", col=1, lwd = 1.5)
+lines(1:100, soln[3, 2:101], type = "b", col=2, lwd = 1.5)
+lines(1:100, soln[5, 2:101], type = "b", col=3, lwd = 1.5)
+lines(1:100, soln[9, 2:101], type = "b", col=4, lwd = 1.5)
+lines(1:100, soln[13, 2:101], type = "b", col=5, lwd = 1.5)
+lines(1:100, soln[17, 2:101], type = "b", col=6, lwd = 1.5)
+lines(1:100, soln[21, 2:101], type = "b", col=7, lwd = 1.5)
+legend("top", legend = legend.names,
+       col = seq(1,7,1),lty = 1, cex = 0.8)
+
+
+```
+```{r}
+library(tidyverse)
+
+soln$Vtot <- rowSums(soln[,2:101])
+soln
+```
